@@ -3,6 +3,8 @@ package config
 import (
 	"encoding/xml"
 	"log"
+	"runtime"
+	"strings"
 )
 
 const (
@@ -14,10 +16,12 @@ var (
 )
 
 func init() {
-	var err error
+	_, currentPath, _, _ := runtime.Caller(1)
+	splitPath := strings.SplitAfter(currentPath, "exeoauth2/")
 
+	var err error
 	// load default configurations
-	Default, err = Load(DefaultFile)
+	Default, err = Load(splitPath[0] + DefaultFile)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -48,14 +52,13 @@ type Tls struct {
 }
 
 type Database struct {
-	BoltDB BoltDB `xml:"bolt-db"`
+	Redis Redis `xml:"redis"`
 }
 
-type BoltDB struct {
-	ClientDB       string `xml:"client-db"`
-	UserDB         string `xml:"user-db"`
-	AccessTokenDB  string `xml:"access-token-db"`
-	RefreshTokenDB string `xml:"refresh-token-db"`
+type Redis struct {
+	Address  string `xml:"address"`
+	Password string `xml:"password"`
+	DB       int64  `xml:"db"`
 }
 
 type APIURI struct {

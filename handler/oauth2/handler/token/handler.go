@@ -6,9 +6,7 @@ import (
 
 	"github.com/ElectronicsExtreme/exehttp"
 
-	"dev.corp.extreme.co.th/exeoauth2/database/access-token"
-	"dev.corp.extreme.co.th/exeoauth2/database/client"
-	"dev.corp.extreme.co.th/exeoauth2/database/user"
+	"dev.corp.extreme.co.th/exeoauth2/database"
 	"dev.corp.extreme.co.th/exeoauth2/handler/oauth2"
 	"dev.corp.extreme.co.th/exeoauth2/handler/oauth2/string-generator"
 	"dev.corp.extreme.co.th/exeoauth2/handler/oauth2/verify"
@@ -70,6 +68,15 @@ func (self *Handler) ServeHTTP(httpResp *exehttp.ResponseWriter, req *http.Reque
 }
 
 func (self *Handler) serveClientCredentials(resp *ResponseWriter, req *http.Request) {
+	redisClient, err := database.NewClient()
+	if err != nil {
+		self.errorLogInfo.Body = err.Error()
+		self.errorLogInfo.Write()
+		resp.WriteHeader(http.StatusInternalServerError)
+		resp.ResponseLogInfo.HTTPStatus = http.StatusInternalServerError
+		resp.ResponseLogInfo.Write()
+		return
+	}
 	grantType := req.Form.Get("grant_type")
 	scopes := req.Form.Get("scope")
 	username, password, ok := req.BasicAuth()
@@ -78,7 +85,7 @@ func (self *Handler) serveClientCredentials(resp *ResponseWriter, req *http.Requ
 		return
 	}
 
-	clientInfo, err := client.GetClientInfo(username)
+	clientInfo, err := redisClient.GetClientInfo(username)
 	if err != nil {
 		self.errorLogInfo.Body = err.Error()
 		self.errorLogInfo.Write()
@@ -113,17 +120,17 @@ func (self *Handler) serveClientCredentials(resp *ResponseWriter, req *http.Requ
 
 	// generate new token
 	token := stringgenerator.RandomString(tokenLength)
-	tokenInfo := &accesstoken.TokenInfo{}
+	tokenInfo := &database.AccessTokenInfo{}
 	tokenInfo.Token = token
 	tokenInfo.Client = username
 	tokenInfo.User = ""
 	tokenInfo.UID = ""
-	tokenInfo.Scopes = scopes
+	tokenInfo.Scopes = database.StringToSet(scopes)
 	expireTime := time.Now().Add(time.Duration(expiresIn) * time.Second)
-	tokenInfo.ExpireTime = &expireTime
-	for err := accesstoken.PutTokenInfo(tokenInfo); err != nil && err.Error() == "duplicate token"; {
-		tokenInfo.Token = stringgenerator.RandomString(8)
-		err = accesstoken.PutTokenInfo(tokenInfo)
+	tokenInfo.ExpireTime = expireTime
+	for err := redisClient.PutAccessTokenInfo(tokenInfo); err != nil && err.Error() == "duplicate token"; {
+		tokenInfo.Token = stringgenerator.RandomString(tokenLength)
+		err = redisClient.PutAccessTokenInfo(tokenInfo)
 	}
 	if err != nil {
 		self.errorLogInfo.Body = err.Error()
@@ -137,6 +144,7 @@ func (self *Handler) serveClientCredentials(resp *ResponseWriter, req *http.Requ
 }
 
 func (self *Handler) serveResourceOwnerCredentials(resp *ResponseWriter, req *http.Request) {
+	redisClient, err := database.NewClient()
 	grantType := req.Form.Get("grant_type")
 	username := req.Form.Get("username")
 	password := req.Form.Get("password")
@@ -147,7 +155,7 @@ func (self *Handler) serveResourceOwnerCredentials(resp *ResponseWriter, req *ht
 		return
 	}
 
-	clientInfo, err := client.GetClientInfo(clientUsername)
+	clientInfo, err := redisClient.GetClientInfo(clientUsername)
 	if err != nil {
 		self.errorLogInfo.Body = err.Error()
 		self.errorLogInfo.Write()
@@ -167,7 +175,7 @@ func (self *Handler) serveResourceOwnerCredentials(resp *ResponseWriter, req *ht
 		return
 	}
 
-	userInfo, err := user.GetUserInfo(username)
+	userInfo, err := redisClient.GetUserInfo(username)
 	if err != nil {
 		self.errorLogInfo.Body = err.Error()
 		self.errorLogInfo.Write()
@@ -203,11 +211,6 @@ func (self *Handler) serveResourceOwnerCredentials(resp *ResponseWriter, req *ht
 		return
 	}
 
-	if !userInfo.EmailActivated {
-		resp.WriteError(&UnactivatedAccountError, "")
-		return
-	}
-
 	// verify client grant
 	if clientInfo.GrantResourceOwner == nil {
 		resp.WriteError(&UnauthorizedClientError, "")
@@ -220,26 +223,19 @@ func (self *Handler) serveResourceOwnerCredentials(resp *ResponseWriter, req *ht
 		return
 	}
 
-	if clientInfo.RequireActivate {
-		if !userInfo.ActivatedClient[clientInfo.ClientUsername] {
-			resp.WriteError(&AccontNotActivateError, "")
-			return
-		}
-	}
-
 	// generate new token
 	token := stringgenerator.RandomString(tokenLength)
-	tokenInfo := &accesstoken.TokenInfo{}
+	tokenInfo := &database.AccessTokenInfo{}
 	tokenInfo.Token = token
 	tokenInfo.Client = clientUsername
 	tokenInfo.User = userInfo.Username
 	tokenInfo.UID = userInfo.UID
-	tokenInfo.Scopes = scopes
+	tokenInfo.Scopes = database.StringToSet(scopes)
 	expireTime := time.Now().Add(time.Duration(expiresIn) * time.Second)
-	tokenInfo.ExpireTime = &expireTime
-	for err := accesstoken.PutTokenInfo(tokenInfo); err != nil && err.Error() == "duplicate token"; {
-		tokenInfo.Token = stringgenerator.RandomString(8)
-		err = accesstoken.PutTokenInfo(tokenInfo)
+	tokenInfo.ExpireTime = expireTime
+	for err := redisClient.PutAccessTokenInfo(tokenInfo); err != nil && err.Error() == "duplicate token"; {
+		tokenInfo.Token = stringgenerator.RandomString(tokenLength)
+		err = redisClient.PutAccessTokenInfo(tokenInfo)
 	}
 	if err != nil {
 		self.errorLogInfo.Body = err.Error()

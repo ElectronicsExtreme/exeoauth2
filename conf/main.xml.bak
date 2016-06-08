@@ -17,18 +17,14 @@
     </private-listener>
   </server>
   <database>
-    <bolt-db>
-      <client-db>bolt-db/client.db</client-db>
-      <user-db>bolt-db/user.db</user-db>
-      <access-token-db>bolt-db/access-token.db</access-token-db>
-      <refresh-token-db>bolt-db/refresh-token.db</refresh-token-db>
-    </bolt-db>
+    <redis>
+      <address>localhost:6379</address>
+      <password>0tPpm9F5aFfXAitVaF2F</password>
+      <db>0</db>
+    </redis>
   </database>
   <api-uri>
     <verify-email>http://localhost:9998/account/verify_email</verify-email>
   </api-uri>
-  <log-path>
-    <error enable="true">log/error</error>
-    <request enable="true">log/request</request>
-  </log-path>
+  <log-path>log</log-path>
 </itemcode-db>

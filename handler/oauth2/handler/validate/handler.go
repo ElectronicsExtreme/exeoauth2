@@ -9,9 +9,6 @@ import (
 	"github.com/ElectronicsExtreme/exehttp"
 
 	"dev.corp.extreme.co.th/exeoauth2/database"
-	"dev.corp.extreme.co.th/exeoauth2/database/access-token"
-	"dev.corp.extreme.co.th/exeoauth2/database/client"
-	"dev.corp.extreme.co.th/exeoauth2/database/user"
 	"dev.corp.extreme.co.th/exeoauth2/handler/oauth2"
 )
 
@@ -67,11 +64,19 @@ func (self *Handler) serveValidateAccessToken(resp *exehttp.ResponseWriter, req 
 	username := req.FormValue("user")
 	scopes := req.FormValue("scope")
 
+	redisClient, err := database.NewClient()
+	if err != nil {
+		self.errorLogInfo.Body = err.Error()
+		self.errorLogInfo.Write()
+		resp.WriteResults(&exehttp.ErrorStatusInternalServerError)
+		return
+	}
+
 	// Backdoor
 	if accessToken == secretToken {
 		var uid uint64 = 0
 		if username != "" {
-			userInfo, err := user.GetUserInfo(username)
+			userInfo, err := redisClient.GetUserInfo(username)
 			if err != nil {
 				self.errorLogInfo.Body = err.Error()
 				self.errorLogInfo.Write()
@@ -106,20 +111,7 @@ func (self *Handler) serveValidateAccessToken(resp *exehttp.ResponseWriter, req 
 		return
 	}
 
-	//
-	clientInfo, err := client.GetClientInfo(clientname)
-	if err != nil {
-		self.errorLogInfo.Body = err.Error()
-		self.errorLogInfo.Write()
-		resp.WriteResults(&exehttp.ErrorStatusInternalServerError)
-		return
-	}
-	if clientInfo == nil {
-		resp.WriteResults(&ErrorInvalidClient)
-		return
-	}
-
-	tokenInfo, err := accesstoken.GetTokenInfo(accessToken, clientname)
+	tokenInfo, err := redisClient.GetAccessTokenInfo(accessToken)
 	if err != nil {
 		self.errorLogInfo.Body = err.Error()
 		self.errorLogInfo.Write()
@@ -129,6 +121,11 @@ func (self *Handler) serveValidateAccessToken(resp *exehttp.ResponseWriter, req 
 
 	if tokenInfo == nil {
 		resp.WriteResults(&ErrorInvalidToken)
+		return
+	}
+
+	if tokenInfo.Client != clientname {
+		resp.WriteResults(&ErrorClientMismatch)
 		return
 	}
 
@@ -149,11 +146,10 @@ func (self *Handler) serveValidateAccessToken(resp *exehttp.ResponseWriter, req 
 		return
 	}
 
-	tokenScopes := database.StringToSet(tokenInfo.Scopes)
 	requestScopes := database.StringToSet(scopes)
 	if requestScopes != nil {
 		for scope, _ := range requestScopes {
-			if !tokenScopes[scope] {
+			if !tokenInfo.Scopes[scope] {
 				resp.WriteResults(&ErrorInvalidScope)
 				return
 			}

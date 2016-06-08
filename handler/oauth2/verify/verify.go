@@ -4,8 +4,7 @@ import (
 	"reflect"
 	"strings"
 
-	"dev.corp.extreme.co.th/exeoauth2/database/client"
-	"dev.corp.extreme.co.th/exeoauth2/database/user"
+	"dev.corp.extreme.co.th/exeoauth2/database"
 	"dev.corp.extreme.co.th/exeoauth2/encrypt"
 	"dev.corp.extreme.co.th/exeoauth2/handler/oauth2"
 )
@@ -13,7 +12,7 @@ import (
 func Init() {
 }
 
-func VerifyClientPassword(clientInfo *client.ClientInfo, password string) bool {
+func VerifyClientPassword(clientInfo *database.ClientInfo, password string) bool {
 	enteredEncryptPassword := encrypt.EncryptText1Way([]byte(password), []byte(string(clientInfo.Salt)))
 	if !reflect.DeepEqual(clientInfo.EncryptedPassword, enteredEncryptPassword) {
 		return false
@@ -21,7 +20,7 @@ func VerifyClientPassword(clientInfo *client.ClientInfo, password string) bool {
 	return true
 }
 
-func VerifyUserPassword(userInfo *user.UserInfo, password string) bool {
+func VerifyUserPassword(userInfo *database.UserInfo, password string) bool {
 	enteredEncryptPassword := encrypt.EncryptText1Way([]byte(password), []byte(string(userInfo.Salt)))
 	if !reflect.DeepEqual(userInfo.EncryptedPassword, enteredEncryptPassword) {
 		return false
@@ -29,7 +28,7 @@ func VerifyUserPassword(userInfo *user.UserInfo, password string) bool {
 	return true
 }
 
-func VerifyGrantScopes(clientInfo *client.ClientInfo, grantType string, scopes string) bool {
+func VerifyGrantScopes(clientInfo *database.ClientInfo, grantType string, scopes string) bool {
 	var clientScope map[string]bool
 	switch grantType {
 	case oauth2.ResourceOwnerCredentialsGrant:

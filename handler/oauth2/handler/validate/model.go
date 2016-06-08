@@ -24,9 +24,9 @@ var ErrorInvalidToken exehttp.ErrorResponse = exehttp.ErrorResponse{
 	HTTPStatus: http.StatusUnauthorized,
 }
 
-var ErrorInvalidClient exehttp.ErrorResponse = exehttp.ErrorResponse{
-	ErrorTag:         "invalid_request",
-	ErrorDescription: "client name is not recognized",
+var ErrorClientMismatch exehttp.ErrorResponse = exehttp.ErrorResponse{
+	ErrorTag:         "invalid_token",
+	ErrorDescription: "the client in request does not match with token's owner",
 	HTTPStatus:       http.StatusBadRequest,
 }
 
