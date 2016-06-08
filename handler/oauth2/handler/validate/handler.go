@@ -69,6 +69,8 @@ func (self *Handler) serveValidateAccessToken(resp *exehttp.ResponseWriter, req 
 		self.errorLogInfo.Body = err.Error()
 		self.errorLogInfo.Write()
 		resp.WriteResults(&exehttp.ErrorStatusInternalServerError)
+		resp.ResponseLogInfo.HTTPStatus = http.StatusInternalServerError
+		resp.ResponseLogInfo.Write()
 		return
 	}
 
@@ -81,6 +83,8 @@ func (self *Handler) serveValidateAccessToken(resp *exehttp.ResponseWriter, req 
 				self.errorLogInfo.Body = err.Error()
 				self.errorLogInfo.Write()
 				resp.WriteResults(&exehttp.ErrorStatusInternalServerError)
+				resp.ResponseLogInfo.HTTPStatus = http.StatusInternalServerError
+				resp.ResponseLogInfo.Write()
 				return
 			}
 			if userInfo == nil {
@@ -92,6 +96,8 @@ func (self *Handler) serveValidateAccessToken(resp *exehttp.ResponseWriter, req 
 				self.errorLogInfo.Body = err.Error()
 				self.errorLogInfo.Write()
 				resp.WriteResults(&exehttp.ErrorStatusInternalServerError)
+				resp.ResponseLogInfo.HTTPStatus = http.StatusInternalServerError
+				resp.ResponseLogInfo.Write()
 				return
 			}
 		}
@@ -116,6 +122,8 @@ func (self *Handler) serveValidateAccessToken(resp *exehttp.ResponseWriter, req 
 		self.errorLogInfo.Body = err.Error()
 		self.errorLogInfo.Write()
 		resp.WriteResults(&exehttp.ErrorStatusInternalServerError)
+		resp.ResponseLogInfo.HTTPStatus = http.StatusInternalServerError
+		resp.ResponseLogInfo.Write()
 		return
 	}
 
@@ -138,6 +146,8 @@ func (self *Handler) serveValidateAccessToken(resp *exehttp.ResponseWriter, req 
 		self.errorLogInfo.Body = "token contain no uid"
 		self.errorLogInfo.Write()
 		resp.WriteResults(&exehttp.ErrorStatusInternalServerError)
+		resp.ResponseLogInfo.HTTPStatus = http.StatusInternalServerError
+		resp.ResponseLogInfo.Write()
 		return
 	}
 
@@ -162,6 +172,8 @@ func (self *Handler) serveValidateAccessToken(resp *exehttp.ResponseWriter, req 
 			self.errorLogInfo.Body = err.Error()
 			self.errorLogInfo.Write()
 			resp.WriteResults(&exehttp.ErrorStatusInternalServerError)
+			resp.ResponseLogInfo.HTTPStatus = http.StatusInternalServerError
+			resp.ResponseLogInfo.Write()
 			return
 		}
 	}
