@@ -20,11 +20,8 @@
     <redis>
       <address>localhost:6379</address>
       <password>0tPpm9F5aFfXAitVaF2F</password>
-      <db>0</db>
+      <db>1</db>
     </redis>
   </database>
-  <api-uri>
-    <verify-email>http://localhost:9998/account/verify_email</verify-email>
-  </api-uri>
   <log-path>log</log-path>
 </itemcode-db>

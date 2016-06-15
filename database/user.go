@@ -24,10 +24,11 @@ func init() {
 }
 
 type UserInfo struct {
-	UID               string `json:"uid" redis:"UID"`
-	Username          string `json:"username" redis:"Username"`
-	EncryptedPassword []byte `json:"password" redis:"EncryptedPassword"`
-	Salt              []byte `json:"salt" redis:"Salt"`
+	UID               string `schema:"uid" redis:"UID" json:"uid,omitempty"`
+	Username          string `schema:"username" redis:"Username" json:"username"`
+	EncryptedPassword []byte `schema:"-" redis:"EncryptedPassword" json:"-"`
+	Salt              []byte `schema:"-" redis:"Salt" json:"-"`
+	Password          string `schema:"password" redis:"-" json:"-"`
 }
 
 func (self *Client) GetUserInfo(username string) (*UserInfo, error) {
@@ -38,7 +39,7 @@ func (self *Client) GetUserInfo(username string) (*UserInfo, error) {
 	val := reflect.ValueOf(userInfo).Elem()
 
 	key := "Users:" + username + ":"
-	exist, err := self.isUserExist(username)
+	exist, err := self.IsUserExist(username)
 	if err != nil {
 		return nil, err
 	}
@@ -49,6 +50,9 @@ func (self *Client) GetUserInfo(username string) (*UserInfo, error) {
 	for i := 0; i < typ.NumField(); i++ {
 		tfield := typ.Field(i)
 		vfield := val.Field(i)
+		if tfield.Tag.Get("redis") == "-" {
+			continue
+		}
 		res := self.client.Get(key + tfield.Tag.Get("redis"))
 		if err := res.Err(); err != nil {
 			if err == redis.Nil {
@@ -74,7 +78,7 @@ func (self *Client) GetUserInfo(username string) (*UserInfo, error) {
 	return userInfo, nil
 }
 
-func (self *Client) isUserExist(username string) (bool, error) {
+func (self *Client) IsUserExist(username string) (bool, error) {
 	username = strings.ToLower(username)
 
 	key := "Users:" + username + ":"
@@ -94,7 +98,7 @@ func (self *Client) isUserExist(username string) (bool, error) {
 }
 
 func (self *Client) PutUserInfo(userInfo *UserInfo) error {
-	exist, err := self.isUserExist(userInfo.Username)
+	exist, err := self.IsUserExist(userInfo.Username)
 	if err != nil {
 		return err
 	}
@@ -105,7 +109,7 @@ func (self *Client) PutUserInfo(userInfo *UserInfo) error {
 }
 
 func (self *Client) UpdateUserInfo(userInfo *UserInfo) error {
-	exist, err := self.isUserExist(userInfo.Username)
+	exist, err := self.IsUserExist(userInfo.Username)
 	if err != nil {
 		return err
 	}
@@ -124,6 +128,9 @@ func (self *Client) setUserInfo(userInfo *UserInfo) error {
 	for i := 0; i < typ.NumField(); i++ {
 		tfield := typ.Field(i)
 		vfield := val.Field(i)
+		if tfield.Tag.Get("redis") == "-" {
+			continue
+		}
 		switch vfield.Type() {
 		case reflect.TypeOf(""): // string type
 			if vfield.String() == "" {
@@ -148,7 +155,7 @@ func (self *Client) setUserInfo(userInfo *UserInfo) error {
 func (self *Client) DeleteUserInfo(username string) error {
 	username = strings.ToLower(username)
 
-	exist, err := self.isUserExist(username)
+	exist, err := self.IsUserExist(username)
 	if err != nil {
 		return err
 	}
@@ -160,6 +167,9 @@ func (self *Client) DeleteUserInfo(username string) error {
 	key := "Users:" + username + ":"
 	for i := 0; i < typ.NumField(); i++ {
 		tfield := typ.Field(i)
+		if tfield.Tag.Get("redis") == "-" {
+			continue
+		}
 		self.client.Del(key + tfield.Tag.Get("redis"))
 	}
 	return nil

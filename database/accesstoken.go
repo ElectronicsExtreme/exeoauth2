@@ -37,7 +37,7 @@ func (self *Client) GetAccessTokenInfo(token string) (*AccessTokenInfo, error) {
 	val := reflect.ValueOf(tokenInfo).Elem()
 
 	key := accessTokenKey(token)
-	exist, err := self.isAccessTokenExist(token)
+	exist, err := self.IsAccessTokenExist(token)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (self *Client) GetAccessTokenInfo(token string) (*AccessTokenInfo, error) {
 	return tokenInfo, nil
 }
 
-func (self *Client) isAccessTokenExist(token string) (bool, error) {
+func (self *Client) IsAccessTokenExist(token string) (bool, error) {
 	//username = strings.ToLower(username)
 	//self.client.Set("isClientExist", "1", 0)
 	res := self.client.HKeys(accessTokenKey(token))

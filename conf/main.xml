@@ -4,27 +4,24 @@
     <public-listener>
       <address>:9999</address>
       <tls enable="false">
-        <certificate-file>/home/corp.extreme.co.th/mochikung/ca.crt</certificate-file>
-        <certificate-key-file>/home/corp.extreme.co.th/mochikung/ca.key</certificate-key-file>
+        <certificate-file></certificate-file>
+        <certificate-key-file></certificate-key-file>
       </tls>
     </public-listener>
     <private-listener>
       <address>:9997</address>
       <tls enable="false">
-        <certificate-file>/home/corp.extreme.co.th/mochikung/ca.crt</certificate-file>
-        <certificate-key-file>/home/corp.extreme.co.th/mochikung/ca.key</certificate-key-file>
+        <certificate-file></certificate-file>
+        <certificate-key-file></certificate-key-file>
       </tls>
     </private-listener>
   </server>
   <database>
     <redis>
       <address>localhost:6379</address>
-      <password>0tPpm9F5aFfXAitVaF2F</password>
+      <password></password>
       <db>1</db>
     </redis>
   </database>
-  <api-uri>
-    <verify-email>http://localhost:9998/account/verify_email</verify-email>
-  </api-uri>
   <log-path>log</log-path>
 </itemcode-db>

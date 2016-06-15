@@ -31,7 +31,6 @@ type Root struct {
 	XMLName  xml.Name `xml:"itemcode-db"`
 	Server   *Server  `xml:"server"`
 	Database Database `xml:"database"`
-	APIURI   APIURI   `xml:"api-uri"`
 	LogPath  string   `xml:"log-path"`
 }
 
@@ -59,9 +58,4 @@ type Redis struct {
 	Address  string `xml:"address"`
 	Password string `xml:"password"`
 	DB       int64  `xml:"db"`
-}
-
-type APIURI struct {
-	VerifyEmail     string `xml:"verify-email"`
-	ChangePassDrago string `xml:"change-pass-drago"`
 }

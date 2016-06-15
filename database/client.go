@@ -41,7 +41,7 @@ func (self *Client) GetClientInfo(username string) (*ClientInfo, error) {
 	val := reflect.ValueOf(clientInfo).Elem()
 
 	key := clientKey(username)
-	exist, err := self.isClientExist(username)
+	exist, err := self.IsClientExist(username)
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +52,9 @@ func (self *Client) GetClientInfo(username string) (*ClientInfo, error) {
 	for i := 0; i < typ.NumField(); i++ {
 		tfield := typ.Field(i)
 		vfield := val.Field(i)
+		if tfield.Tag.Get("redis") == "-" {
+			continue
+		}
 		switch vfield.Type() {
 		case reflect.TypeOf(""): // string type
 			res := self.client.Get(key + tfield.Tag.Get("redis"))
@@ -101,7 +104,7 @@ func (self *Client) GetClientInfo(username string) (*ClientInfo, error) {
 	return clientInfo, nil
 }
 
-func (self *Client) isClientExist(username string) (bool, error) {
+func (self *Client) IsClientExist(username string) (bool, error) {
 	//username = strings.ToLower(username)
 	//self.client.Set("isClientExist", "1", 0)
 	key := clientKey(username)
@@ -121,7 +124,7 @@ func (self *Client) isClientExist(username string) (bool, error) {
 }
 
 func (self *Client) PutClientInfo(clientInfo *ClientInfo) error {
-	exist, err := self.isClientExist(clientInfo.ClientUsername)
+	exist, err := self.IsClientExist(clientInfo.ClientUsername)
 	if err != nil {
 		return err
 	}
@@ -139,6 +142,9 @@ func (self *Client) setClientInfo(clientInfo *ClientInfo) error {
 	for i := 0; i < typ.NumField(); i++ {
 		tfield := typ.Field(i)
 		vfield := val.Field(i)
+		if tfield.Tag.Get("redis") == "-" {
+			continue
+		}
 		switch vfield.Type() {
 		case reflect.TypeOf(""): // string type
 			if vfield.String() == "" {
