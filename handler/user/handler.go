@@ -58,12 +58,16 @@ func (self *Handler) servePost(resp *exehttp.ResponseWriter, req *http.Request) 
 	if err != nil {
 		self.errorLogInfo.Body = err.Error()
 		self.errorLogInfo.Write()
+		resp.WriteResults(&exehttp.ErrorStatusInternalServerError)
+		return
 	}
 
 	redisClient, err := database.NewClient()
 	if err != nil {
 		self.errorLogInfo.Body = err.Error()
 		self.errorLogInfo.Write()
+		resp.WriteResults(&exehttp.ErrorStatusInternalServerError)
+		return
 	}
 
 	inUserInfo := &database.UserInfo{}
@@ -110,6 +114,7 @@ func (self *Handler) servePost(resp *exehttp.ResponseWriter, req *http.Request) 
 		self.errorLogInfo.Body = err.Error()
 		self.errorLogInfo.Write()
 		resp.WriteResults(&exehttp.ErrorStatusInternalServerError)
+		return
 	}
 	resp.WriteResults(&exehttp.Results{
 		Success:    true,

@@ -190,15 +190,6 @@ func (self *Handler) serveResourceOwnerCredentials(resp *ResponseWriter, req *ht
 		return
 	}
 
-	if userInfo.UID == "" {
-		self.errorLogInfo.Body = "userinfo does not contain uid"
-		self.errorLogInfo.Write()
-		resp.WriteHeader(http.StatusInternalServerError)
-		resp.ResponseLogInfo.HTTPStatus = http.StatusInternalServerError
-		resp.ResponseLogInfo.Write()
-		return
-	}
-
 	// verify client password
 	if !verify.VerifyClientPassword(clientInfo, clientPassword) {
 		resp.WriteError(&InvalidClientError, "")
