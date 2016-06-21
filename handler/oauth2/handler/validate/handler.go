@@ -142,14 +142,14 @@ func (self *Handler) serveValidateAccessToken(resp *exehttp.ResponseWriter, req 
 		return
 	}
 
-	if tokenInfo.User != "" && tokenInfo.UID == "" {
+	/*if tokenInfo.User != "" && tokenInfo.UID == "" {
 		self.errorLogInfo.Body = "token contain no uid"
 		self.errorLogInfo.Write()
 		resp.WriteResults(&exehttp.ErrorStatusInternalServerError)
 		resp.ResponseLogInfo.HTTPStatus = http.StatusInternalServerError
 		resp.ResponseLogInfo.Write()
 		return
-	}
+	}*/
 
 	if tokenInfo.ExpireTime.Before(time.Now()) {
 		resp.WriteResults(&ErrorTokenExpired)
