@@ -4,6 +4,7 @@ import (
 	"github.com/ElectronicsExtreme/exehttp"
 
 	"dev.corp.extreme.co.th/exeoauth2/config"
+	"dev.corp.extreme.co.th/exeoauth2/handler/change_password"
 	"dev.corp.extreme.co.th/exeoauth2/handler/oauth2/handler/token"
 	"dev.corp.extreme.co.th/exeoauth2/handler/oauth2/handler/validate"
 	"dev.corp.extreme.co.th/exeoauth2/handler/user"
@@ -16,6 +17,7 @@ func main() {
 	public := exehttp.NewServer(config.Default.Server.PublicListener.Address)
 	public.Handle(token.PrefixPath, token.New())
 	public.Handle(user.PrefixPath, user.New())
+	public.Handle(changepassword.PrefixPath, changepassword.New())
 
 	private := exehttp.NewServer(config.Default.Server.PrivateListener.Address)
 	private.Handle(validate.PrefixPath, validate.New())
