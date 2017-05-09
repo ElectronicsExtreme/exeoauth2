@@ -18,7 +18,7 @@
   </server>
   <database>
     <redis>
-      <address>localhost:6379</address>
+      <address>redis:6379</address>
       <password></password>
       <db>1</db>
     </redis>

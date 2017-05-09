@@ -1,0 +1,25 @@
+version: '3'
+services:
+  oauth2:
+    image: golang:1.8
+    container_name: oauth2
+    command: sh -c "go get; go run main.go;"
+    environment:
+      - "TZ=Asia/Bangkok"
+    volumes:
+      - ./app:/go/src/exeoauth2
+    ports:
+      - "15061:9999"
+    working_dir: /go/src/exeoauth2
+    restart: always
+    links: 
+      - redis
+
+  redis:
+    image: redis:alpine
+    container_name: oauth2-redis
+    volumes:
+      - ./redis/data:/data
+      - ./redis/config:/usr/local/etc/redis
+    environment:
+      - "TZ=Asia/Bangkok"
