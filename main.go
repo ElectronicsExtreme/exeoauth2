@@ -14,15 +14,14 @@ func main() {
 	exehttp.StartLogger(config.Default.LogPath)
 
 	// setup request handlers
-	public := exehttp.NewServer(config.Default.Server.PublicListener.Address)
-	public.Handle(token.PrefixPath, token.New())
-	public.Handle(user.PrefixPath, user.New())
-	public.Handle(changepassword.PrefixPath, changepassword.New())
+	server := exehttp.NewServer(config.Default.Server.PublicListener.Address)
+	server.Handle(token.PrefixPath, token.New())
+	server.Handle(user.PrefixPath, user.New())
+	server.Handle(changepassword.PrefixPath, changepassword.New())
 
-	private := exehttp.NewServer(config.Default.Server.PrivateListener.Address)
-	private.Handle(validate.PrefixPath, validate.New())
+	server.Handle(validate.PrefixPath, validate.New())
 
 	servers := make([]exehttp.Server, 0, 0)
-	servers = append(servers, public, private)
+	servers = append(servers, server)
 	exehttp.ListenAndServe(servers)
 }
