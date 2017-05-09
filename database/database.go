@@ -5,7 +5,7 @@ import (
 
 	"gopkg.in/redis.v3"
 
-	"dev.corp.extreme.co.th/exeoauth2/config"
+	"exeoauth2/config"
 )
 
 const ()

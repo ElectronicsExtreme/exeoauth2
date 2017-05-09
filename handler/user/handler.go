@@ -8,8 +8,8 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/gorilla/schema"
 
-	"dev.corp.extreme.co.th/exeoauth2/database"
-	"dev.corp.extreme.co.th/exeoauth2/encrypt"
+	"exeoauth2/database"
+	"exeoauth2/encrypt"
 )
 
 const (

@@ -8,8 +8,8 @@ import (
 
 	"github.com/ElectronicsExtreme/exehttp"
 
-	"dev.corp.extreme.co.th/exeoauth2/database"
-	"dev.corp.extreme.co.th/exeoauth2/handler/oauth2"
+	"exeoauth2/database"
+	"exeoauth2/handler/oauth2"
 )
 
 const (

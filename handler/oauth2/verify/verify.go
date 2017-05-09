@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"strings"
 
-	"dev.corp.extreme.co.th/exeoauth2/database"
-	"dev.corp.extreme.co.th/exeoauth2/encrypt"
-	"dev.corp.extreme.co.th/exeoauth2/handler/oauth2"
+	"exeoauth2/database"
+	"exeoauth2/encrypt"
+	"exeoauth2/handler/oauth2"
 )
 
 func Init() {

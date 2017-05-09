@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"dev.corp.extreme.co.th/exeoauth2/config"
+	"exeoauth2/config"
 )
 
 var (

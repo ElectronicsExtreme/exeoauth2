@@ -3,11 +3,11 @@ package main
 import (
 	"github.com/ElectronicsExtreme/exehttp"
 
-	"dev.corp.extreme.co.th/exeoauth2/config"
-	"dev.corp.extreme.co.th/exeoauth2/handler/change_password"
-	"dev.corp.extreme.co.th/exeoauth2/handler/oauth2/handler/token"
-	"dev.corp.extreme.co.th/exeoauth2/handler/oauth2/handler/validate"
-	"dev.corp.extreme.co.th/exeoauth2/handler/user"
+	"exeoauth2/config"
+	"exeoauth2/handler/change_password"
+	"exeoauth2/handler/oauth2/handler/token"
+	"exeoauth2/handler/oauth2/handler/validate"
+	"exeoauth2/handler/user"
 )
 
 func main() {

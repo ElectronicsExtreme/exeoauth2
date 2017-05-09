@@ -2,7 +2,7 @@ package database
 
 import (
 	"bytes"
-	"dev.corp.extreme.co.th/exeoauth2/config"
+	"exeoauth2/config"
 	"reflect"
 	"testing"
 )

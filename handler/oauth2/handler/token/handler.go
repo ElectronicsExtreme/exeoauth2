@@ -6,10 +6,10 @@ import (
 
 	"github.com/ElectronicsExtreme/exehttp"
 
-	"dev.corp.extreme.co.th/exeoauth2/database"
-	"dev.corp.extreme.co.th/exeoauth2/handler/oauth2"
-	"dev.corp.extreme.co.th/exeoauth2/handler/oauth2/string-generator"
-	"dev.corp.extreme.co.th/exeoauth2/handler/oauth2/verify"
+	"exeoauth2/database"
+	"exeoauth2/handler/oauth2"
+	"exeoauth2/handler/oauth2/string-generator"
+	"exeoauth2/handler/oauth2/verify"
 )
 
 const (
