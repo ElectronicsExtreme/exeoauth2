@@ -1,0 +1,16 @@
+server:
+  address: ":9999"
+database:
+  redis:
+    address: "redis:6379"
+    password:
+    access-token-db: 10
+    client-db: 11
+access-token:
+  time-to-live: 3600
+  ttl-after-expire: 600
+  token-length: 32
+log-path:
+  error: "log/error"
+  request: "log/request"
+  transaction: "log/transaction"
