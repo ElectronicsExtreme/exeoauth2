@@ -1,79 +1,13 @@
 package token
 
 import (
-	"encoding/json"
 	"net/http"
-
-	"github.com/ElectronicsExtreme/exehttp"
 )
-
-type ResponseWriter struct {
-	*exehttp.ResponseWriter
-}
-
-func NewResponseWriter(resp *exehttp.ResponseWriter) *ResponseWriter {
-	return &ResponseWriter{resp}
-}
-
-func (self *ResponseWriter) WriteSuccess(accessToken string, expiresIn int, refreshToken string, scopes string) error {
-	resp := &SuccessResponse{
-		AccessToken:  accessToken,
-		TokenType:    "bearer",
-		ExpiresIn:    expiresIn,
-		RefreshToken: refreshToken,
-		Scope:        scopes,
-	}
-	data, err := json.Marshal(resp)
-	if err != nil {
-		self.WriteHeader(http.StatusInternalServerError)
-		self.ResponseLogInfo.HTTPStatus = http.StatusInternalServerError
-		self.ResponseLogInfo.Write()
-		return err
-	}
-	self.Header().Set("Content-Type", "application/json")
-	self.Header().Set("Cache-Control", "no-store")
-	self.Header().Set("Pragma", "no-cache")
-	self.WriteHeader(http.StatusOK)
-	self.Write(data)
-	self.ResponseLogInfo.HTTPStatus = http.StatusOK
-	self.ResponseLogInfo.Body = string(data)
-	self.ResponseLogInfo.Write()
-	return nil
-}
-
-func (self *ResponseWriter) WriteError(resp *ErrorResponse, description string) error {
-	var data []byte
-	var err error
-
-	if description == "" {
-		data, err = json.Marshal(resp)
-	} else {
-		data, err = json.Marshal(&ErrorResponse{
-			ErrorTag:         resp.ErrorTag,
-			ErrorDescription: description,
-			ErrorURI:         resp.ErrorURI,
-		})
-	}
-	if err != nil {
-		self.WriteHeader(http.StatusInternalServerError)
-		self.ResponseLogInfo.HTTPStatus = http.StatusInternalServerError
-		self.ResponseLogInfo.Write()
-		return err
-	}
-	self.Header().Set("Content-Type", "application/json")
-	self.Header().Set("Cache-Control", "no-store")
-	self.Header().Set("Pragma", "no-cache")
-	self.WriteHeader(resp.HTTPStatus)
-	self.Write(data)
-	self.ResponseLogInfo.HTTPStatus = resp.HTTPStatus
-	self.ResponseLogInfo.Body = string(data)
-	return nil
-}
 
 type SuccessResponse struct {
 	AccessToken  string `json:"access_token"`
 	TokenType    string `json:"token_type"`
-	ExpiresIn    int    `json:"expires_in,omitempty"`
+	ExpiresIn    uint   `json:"expires_in,omitempty"`
 	RefreshToken string `json:"refresh_token,omitempty"`
 	Scope        string `json:"scope,omitempty"`
 }
