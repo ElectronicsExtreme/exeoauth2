@@ -29,6 +29,7 @@ type Redis struct {
 	Password      string `mapstructure:"password"`
 	AccessTokenDB int    `mapstructure:"access-token-db"`
 	ClientDB      int    `mapstructure:"client-db"`
+	UserDB        int    `mapstructure:"user-db"`
 }
 
 type Server struct {
