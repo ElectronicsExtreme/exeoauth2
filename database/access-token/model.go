@@ -1,8 +1,8 @@
 package accesstoken
 
 import (
+	"exeoauth2/common/bearer"
 	"net/http"
-	"sso-oauth2/common/bearer"
 )
 
 // Result of validation

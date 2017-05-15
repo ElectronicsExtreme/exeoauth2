@@ -9,10 +9,10 @@ import (
 
 	"gopkg.in/redis.v5"
 
-	"sso-oauth2/common"
-	"sso-oauth2/common/encrypt"
-	"sso-oauth2/config"
-	"sso-oauth2/handler/oauth2"
+	"exeoauth2/common"
+	"exeoauth2/common/encrypt"
+	"exeoauth2/config"
+	"exeoauth2/handler/oauth2"
 )
 
 const ()

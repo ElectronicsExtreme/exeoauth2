@@ -1,7 +1,7 @@
 package accesstoken
 
 import (
-	"sso-oauth2/common"
+	"exeoauth2/common"
 	"time"
 )
 

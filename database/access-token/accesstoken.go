@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/redis.v5"
 
-	"sso-oauth2/config"
+	"exeoauth2/config"
 )
 
 const ()
