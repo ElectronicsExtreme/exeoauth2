@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"gopkg.in/redis.v5"
 
@@ -35,11 +36,13 @@ func init() {
 
 // UserInfo store all info about user in one struct.
 type UserInfo struct {
-	Username          string `json:"username"`
-	EncryptedPassword []byte `json:"encrypted_password"`
-	Salt              []byte `json:"salt"`
-	Password          string `json:"-"`
-	Email             string `json:"email"`
+	Username          string    `json:"username"`
+	EncryptedPassword []byte    `json:"encrypted_password"`
+	Salt              []byte    `json:"salt"`
+	Password          string    `json:"-"`
+	Email             string    `json:"email"`
+	CreateDate        time.Time `json:"create_date"`
+	UpdateDate        time.Time `json:"update_date"`
 }
 
 func (u *UserInfo) VerifyPassword(password string) bool {

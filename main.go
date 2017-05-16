@@ -23,6 +23,12 @@ import (
 	clirmscope "exeoauth2/handler/client/remove-scope"
 	cliview "exeoauth2/handler/client/view"
 
+	usrchangeemail "exeoauth2/handler/user/change-email"
+	usrchangepass "exeoauth2/handler/user/change-password"
+	usrdelete "exeoauth2/handler/user/delete"
+	usrregister "exeoauth2/handler/user/register"
+	usrview "exeoauth2/handler/user/view"
+
 	authtoken "exeoauth2/handler/oauth2/token"
 	authvalidate "exeoauth2/handler/oauth2/validate"
 )
@@ -47,6 +53,12 @@ func addHandler() {
 	http.HandleFunc(cliaddscope.PrefixPath, cliaddscope.Handler)
 	http.HandleFunc(clirmscope.PrefixPath, clirmscope.Handler)
 	http.HandleFunc(clidelete.PrefixPath, clidelete.Handler)
+
+	http.HandleFunc(usrchangeemail.PrefixPath, usrchangeemail.Handler)
+	http.HandleFunc(usrchangepass.PrefixPath, usrchangepass.Handler)
+	http.HandleFunc(usrdelete.PrefixPath, usrdelete.Handler)
+	http.HandleFunc(usrregister.PrefixPath, usrregister.Handler)
+	http.HandleFunc(usrview.PrefixPath, usrview.Handler)
 
 	http.HandleFunc(authtoken.PrefixPath, authtoken.Handler)
 	http.HandleFunc(authvalidate.PrefixPath, authvalidate.Handler)

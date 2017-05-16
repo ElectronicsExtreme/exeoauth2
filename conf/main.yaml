@@ -3,9 +3,10 @@ server:
 database:
   redis:
     address: "redis:6379"
-    password:
+    password: 
     access-token-db: 10
     client-db: 11
+    user-db: 12
 access-token:
   time-to-live: 3600
   ttl-after-expire: 600

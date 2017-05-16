@@ -1,4 +1,4 @@
-package changesecret
+package changeemail
 
 import (
 	"net/http"
@@ -8,10 +8,9 @@ import (
 
 	"exeoauth2/common"
 	"exeoauth2/common/bearer"
-	"exeoauth2/common/encrypt"
 	"exeoauth2/database/access-token"
-	clientdb "exeoauth2/database/client"
-	parent "exeoauth2/handler/client"
+	userdb "exeoauth2/database/user"
+	parent "exeoauth2/handler/user"
 	"exeoauth2/logger"
 )
 
@@ -20,14 +19,14 @@ const (
 )
 
 var (
-	PrefixPath = parent.PrefixPath + "/change_secret"
+	PrefixPath = parent.PrefixPath + "/change_email"
 )
 
 type Input struct {
-	ClientID  string
-	NewSecret string
-	OldSecret string
-	Forced    string
+	Username string
+	Password string
+	Email    string
+	Forced   string
 }
 
 func Handler(httpResp http.ResponseWriter, req *http.Request) {
@@ -83,34 +82,32 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 
 	// Validate input
 	input := &Input{
-		ClientID:  req.PostFormValue("client_id"),
-		NewSecret: req.PostFormValue("new_secret"),
-		OldSecret: req.PostFormValue("old_secret"),
-		Forced:    req.PostFormValue("forced"),
+		Username: req.PostFormValue("username"),
+		Password: req.PostFormValue("password"),
+		Email:    req.PostFormValue("email"),
+		Forced:   req.PostFormValue("forced"),
 	}
 
 	valErr := common.ValidateErrorResponse{}
 
-	var client *clientdb.ClientInfo
+	var user *userdb.UserInfo
 
-	if input.ClientID == "" {
-		valErr.Add(parent.ErrorClientIDMissing)
-	} else if !govalidator.IsAlphanumeric(input.ClientID) {
-		valErr.Add(parent.ErrorClientIDInvalid)
-	} else if client, err = clientdb.ReadClient(input.ClientID); client == nil {
+	if input.Username == "" {
+		valErr.Add(parent.ErrorUsernameMissing)
+	} else if !govalidator.IsAlphanumeric(input.Username) {
+		valErr.Add(parent.ErrorUsernameInvalid)
+	} else if user, err = userdb.ReadUser(input.Username); user == nil {
 		if err != nil {
 			errLogger.WriteLog(err)
 			resp.WriteResults(common.ErrorStatusInternalServerError)
 			return
 		} else {
-			valErr.Add(parent.ErrorClientNotFound)
+			valErr.Add(parent.ErrorUserNotFound)
 		}
 	}
 
-	if len(input.NewSecret) < parent.ClientSecretLenMin || len(input.NewSecret) > parent.ClientSecretLenMax {
-		valErr.Add(parent.ErrorClientSecretLengthInvalid)
-	} else if !govalidator.IsPrintableASCII(input.NewSecret) {
-		valErr.Add(parent.ErrorClientSecretInvalid)
+	if !govalidator.IsEmail(input.Email) {
+		valErr.Add(parent.ErrorEmailInvalid)
 	}
 
 	if len(valErr.ErrorDescriptions) > 0 {
@@ -119,23 +116,23 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 	}
 
 	if input.Forced != "true" {
-		if !client.VerifySecret(input.OldSecret) {
-			resp.WriteResults(ErrorOldSecretIncorrect)
+		if !user.VerifyPassword(input.Password) {
+			resp.WriteResults(ErrorPasswordIncorrect)
 			return
 		}
 	}
 
-	client.EncryptedClientSecret = encrypt.EncryptText1Way([]byte(input.NewSecret), client.Salt)
-	client.UpdateDate = time.Now()
+	user.Email = input.Email
+	user.UpdateDate = time.Now()
 
-	err = clientdb.UpdateClient(client)
+	err = userdb.UpdateUser(user)
 	if err != nil {
 		errLogger.WriteLog(err)
 		resp.WriteResults(common.ErrorStatusInternalServerError)
 		return
 	}
 
-	err = resp.WriteResults(parent.NewClientResult(client))
+	err = resp.WriteResults(parent.NewUserResult(user))
 	if err != nil {
 		errLogger.WriteLog(err)
 	}
