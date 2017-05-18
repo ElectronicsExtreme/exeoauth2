@@ -1,4 +1,4 @@
-package changeemail
+package email
 
 import (
 	"net/http"

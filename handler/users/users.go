@@ -1,4 +1,4 @@
-package user
+package users
 
 import (
 	"fmt"
@@ -8,8 +8,6 @@ import (
 )
 
 const (
-	PrefixPath = "/user"
-
 	UsernameLenMin = 3
 	UsernameLenMax = 20
 	PasswordLenMin = 6

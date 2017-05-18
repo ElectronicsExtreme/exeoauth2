@@ -9,25 +9,21 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/spf13/pflag"
 
 	"exeoauth2/common/encrypt"
 	"exeoauth2/config"
 	clientdb "exeoauth2/database/client"
 
-	cliaddscope "exeoauth2/handler/client/add-scope"
-	clichangedesc "exeoauth2/handler/client/change-description"
-	clichangesec "exeoauth2/handler/client/change-secret"
-	clidelete "exeoauth2/handler/client/delete"
-	cliregister "exeoauth2/handler/client/register"
-	clirmscope "exeoauth2/handler/client/remove-scope"
-	cliview "exeoauth2/handler/client/view"
+	clis "exeoauth2/handler/clients"
+	cli "exeoauth2/handler/clients/client"
+	clisecret "exeoauth2/handler/clients/client/secret"
 
-	usrchangeemail "exeoauth2/handler/user/change-email"
-	usrchangepass "exeoauth2/handler/user/change-password"
-	usrdelete "exeoauth2/handler/user/delete"
-	usrregister "exeoauth2/handler/user/register"
-	usrview "exeoauth2/handler/user/view"
+	usrs "exeoauth2/handler/users"
+	usr "exeoauth2/handler/users/user"
+	usremail "exeoauth2/handler/users/user/email"
+	usrpassword "exeoauth2/handler/users/user/password"
 
 	authtoken "exeoauth2/handler/oauth2/token"
 	authvalidate "exeoauth2/handler/oauth2/validate"
@@ -45,25 +41,6 @@ func init() {
 	pflag.Parse()
 }
 
-func addHandler() {
-	http.HandleFunc(cliregister.PrefixPath, cliregister.Handler)
-	http.HandleFunc(cliview.PrefixPath, cliview.Handler)
-	http.HandleFunc(clichangedesc.PrefixPath, clichangedesc.Handler)
-	http.HandleFunc(clichangesec.PrefixPath, clichangesec.Handler)
-	http.HandleFunc(cliaddscope.PrefixPath, cliaddscope.Handler)
-	http.HandleFunc(clirmscope.PrefixPath, clirmscope.Handler)
-	http.HandleFunc(clidelete.PrefixPath, clidelete.Handler)
-
-	http.HandleFunc(usrchangeemail.PrefixPath, usrchangeemail.Handler)
-	http.HandleFunc(usrchangepass.PrefixPath, usrchangepass.Handler)
-	http.HandleFunc(usrdelete.PrefixPath, usrdelete.Handler)
-	http.HandleFunc(usrregister.PrefixPath, usrregister.Handler)
-	http.HandleFunc(usrview.PrefixPath, usrview.Handler)
-
-	http.HandleFunc(authtoken.PrefixPath, authtoken.Handler)
-	http.HandleFunc(authvalidate.PrefixPath, authvalidate.Handler)
-}
-
 func main() {
 	if initialize {
 		initializeAdmin()
@@ -76,7 +53,20 @@ func main() {
 	server := http.Server{Addr: Addr}
 	server.SetKeepAlivesEnabled(false)
 
-	addHandler()
+	r := mux.NewRouter()
+	r.HandleFunc("/client/", clis.Handler)
+	r.HandleFunc("/client/{client_id}", cli.Handler)
+	r.HandleFunc("/client/{client_id}/secret", clisecret.Handler)
+
+	r.HandleFunc("/user/", usrs.Handler)
+	r.HandleFunc("/user/{username}", usr.Handler)
+	r.HandleFunc("/user/{username}/password", usrpassword.Handler)
+	r.HandleFunc("/user/{username}/email", usremail.Handler)
+
+	r.HandleFunc(authtoken.PrefixPath, authtoken.Handler)
+	r.HandleFunc(authvalidate.PrefixPath, authvalidate.Handler)
+
+	http.Handle("/", r)
 
 	go func() {
 		log.Printf("starting requests listener on %v\n", Addr)
@@ -99,7 +89,7 @@ func main() {
 func initializeAdmin() {
 	clientID := "Admin"
 	clientSecret := "Password"
-	salt, err := encrypt.GenerateSalt(cliregister.SaltLength)
+	salt, err := encrypt.GenerateSalt(clis.SaltLength)
 	if err != nil {
 		panic(err)
 	}

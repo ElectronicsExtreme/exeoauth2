@@ -1,6 +1,8 @@
-package register
+package users
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -11,7 +13,6 @@ import (
 	"exeoauth2/common/encrypt"
 	"exeoauth2/database/access-token"
 	userdb "exeoauth2/database/user"
-	parent "exeoauth2/handler/user"
 	"exeoauth2/logger"
 )
 
@@ -20,18 +21,16 @@ const (
 	SaltLength    = 64
 )
 
-var (
-	PrefixPath = parent.PrefixPath + "/register"
-)
+var ()
 
 type Input struct {
-	Username string
-	Password string
-	Email    string
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
 }
 
 func Handler(httpResp http.ResponseWriter, req *http.Request) {
-	reqLogger, respLogger, errLogger, _ := logger.NewLoggers(PrefixPath)
+	reqLogger, respLogger, errLogger, transLogger := logger.NewLoggers(req.URL.Path)
 	resp := common.NewResponseWriter(httpResp, respLogger)
 
 	err := reqLogger.WriteLog(req)
@@ -42,23 +41,15 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 	}
 
 	// Basic request validation
-	if req.Method != http.MethodPost {
+	switch req.Method {
+	case http.MethodPost:
+		postHandler(resp, req, respLogger, errLogger, transLogger)
+	default:
 		resp.WriteResults(common.ErrorStatusMethodNotAllowed)
-		return
 	}
-	err = req.ParseForm()
-	if err != nil {
-		errLogger.WriteLog(err)
-		resp.WriteResults(common.ErrorStatusInternalServerError)
-		return
-	}
-	for _, value := range req.PostForm {
-		if len(value) > 1 {
-			resp.WriteResults(common.ErrorDuplicateParameters)
-			return
-		}
-	}
+}
 
+func postHandler(resp *common.ResponseWriter, req *http.Request, respLogger *logger.ResponseLogger, errLogger *logger.ErrorLogger, transLogger *logger.TransactionLogger) {
 	// Validate Token
 	token, err := bearer.ReadToken(req)
 	if err != nil {
@@ -82,30 +73,36 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 	}
 
 	// Validate input
-	input := &Input{
-		Username: req.PostFormValue("username"),
-		Password: req.PostFormValue("password"),
-		Email:    req.PostFormValue("email"),
+	raw, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		resp.WriteResults(&common.ErrorStatusInternalServerError)
+		return
+	}
+	input := &Input{}
+	err = json.Unmarshal(raw, input)
+	if err != nil {
+		resp.WriteResults(&common.ErrorStatusInternalServerError)
+		return
 	}
 
 	valErr := common.ValidateErrorResponse{}
 
-	if len(input.Username) < parent.UsernameLenMin || len(input.Username) > parent.UsernameLenMax {
-		valErr.Add(parent.ErrorUsernameLengthInvalid)
+	if len(input.Username) < UsernameLenMin || len(input.Username) > UsernameLenMax {
+		valErr.Add(ErrorUsernameLengthInvalid)
 	} else if !govalidator.IsAlphanumeric(input.Username) {
-		valErr.Add(parent.ErrorUsernameInvalid)
+		valErr.Add(ErrorUsernameInvalid)
 	} else if c, _ := userdb.ReadUser(input.Username); c != nil {
-		valErr.Add(parent.ErrorUsernameDuplicate)
+		valErr.Add(ErrorUsernameDuplicate)
 	}
 
-	if len(input.Password) < parent.PasswordLenMin || len(input.Password) > parent.PasswordLenMax {
-		valErr.Add(parent.ErrorPasswordLengthInvalid)
+	if len(input.Password) < PasswordLenMin || len(input.Password) > PasswordLenMax {
+		valErr.Add(ErrorPasswordLengthInvalid)
 	} else if !govalidator.IsPrintableASCII(input.Password) {
-		valErr.Add(parent.ErrorPasswordInvalid)
+		valErr.Add(ErrorPasswordInvalid)
 	}
 
 	if !govalidator.IsEmail(input.Email) {
-		valErr.Add(parent.ErrorEmailInvalid)
+		valErr.Add(ErrorEmailInvalid)
 	}
 
 	if len(valErr.ErrorDescriptions) > 0 {
@@ -137,7 +134,7 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = resp.WriteResults(parent.NewUserResult(newUser))
+	err = resp.WriteResults(NewUserResult(newUser))
 	if err != nil {
 		errLogger.WriteLog(err)
 	}

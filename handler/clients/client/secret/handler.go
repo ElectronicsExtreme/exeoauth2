@@ -1,16 +1,20 @@
-package changedescription
+package changesecret
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"time"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/gorilla/mux"
 
 	"exeoauth2/common"
 	"exeoauth2/common/bearer"
+	"exeoauth2/common/encrypt"
 	"exeoauth2/database/access-token"
 	clientdb "exeoauth2/database/client"
-	parent "exeoauth2/handler/client"
+	parent "exeoauth2/handler/clients"
 	"exeoauth2/logger"
 )
 
@@ -18,17 +22,16 @@ const (
 	RequiredScope = "admin"
 )
 
-var (
-	PrefixPath = parent.PrefixPath + "/change_description"
-)
+var ()
 
 type Input struct {
-	ClientID    string
-	Description string
+	NewSecret string `json:"new_secret"`
+	OldSecret string `json:"old_secert"`
+	Forced    bool   `json:"forced"`
 }
 
 func Handler(httpResp http.ResponseWriter, req *http.Request) {
-	reqLogger, respLogger, errLogger, _ := logger.NewLoggers(PrefixPath)
+	reqLogger, respLogger, errLogger, _ := logger.NewLoggers(req.URL.Path)
 	resp := common.NewResponseWriter(httpResp, respLogger)
 
 	err := reqLogger.WriteLog(req)
@@ -39,7 +42,7 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 	}
 
 	// Basic request validation
-	if req.Method != http.MethodPost {
+	if req.Method != http.MethodPut {
 		resp.WriteResults(common.ErrorStatusMethodNotAllowed)
 		return
 	}
@@ -79,20 +82,30 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 	}
 
 	// Validate input
-	input := &Input{
-		ClientID:    req.PostFormValue("client_id"),
-		Description: req.PostFormValue("description"),
+	raw, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		resp.WriteResults(&common.ErrorStatusInternalServerError)
+		return
 	}
 
+	input := &Input{}
+	err = json.Unmarshal(raw, input)
+	if err != nil {
+		resp.WriteResults(&common.ErrorStatusInternalServerError)
+		return
+	}
+
+	vars := mux.Vars(req)
+	clientID := vars["client_id"]
 	valErr := common.ValidateErrorResponse{}
 
 	var client *clientdb.ClientInfo
 
-	if input.ClientID == "" {
+	if clientID == "" {
 		valErr.Add(parent.ErrorClientIDMissing)
-	} else if !govalidator.IsAlphanumeric(input.ClientID) {
+	} else if !govalidator.IsAlphanumeric(clientID) {
 		valErr.Add(parent.ErrorClientIDInvalid)
-	} else if client, err = clientdb.ReadClient(input.ClientID); client == nil {
+	} else if client, err = clientdb.ReadClient(clientID); client == nil {
 		if err != nil {
 			errLogger.WriteLog(err)
 			resp.WriteResults(common.ErrorStatusInternalServerError)
@@ -102,8 +115,10 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	if len(input.Description) > parent.DescriptionLenMax {
-		valErr.Add(parent.ErrorDescriptionLengthInvalid)
+	if len(input.NewSecret) < parent.ClientSecretLenMin || len(input.NewSecret) > parent.ClientSecretLenMax {
+		valErr.Add(parent.ErrorClientSecretLengthInvalid)
+	} else if !govalidator.IsPrintableASCII(input.NewSecret) {
+		valErr.Add(parent.ErrorClientSecretInvalid)
 	}
 
 	if len(valErr.ErrorDescriptions) > 0 {
@@ -111,7 +126,14 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	client.Description = input.Description
+	if !input.Forced {
+		if !client.VerifySecret(input.OldSecret) {
+			resp.WriteResults(ErrorOldSecretIncorrect)
+			return
+		}
+	}
+
+	client.EncryptedClientSecret = encrypt.EncryptText1Way([]byte(input.NewSecret), client.Salt)
 	client.UpdateDate = time.Now()
 
 	err = clientdb.UpdateClient(client)

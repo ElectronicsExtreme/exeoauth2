@@ -1,6 +1,8 @@
-package register
+package clients
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -11,7 +13,6 @@ import (
 	"exeoauth2/common/encrypt"
 	"exeoauth2/database/access-token"
 	clientdb "exeoauth2/database/client"
-	parent "exeoauth2/handler/client"
 	"exeoauth2/logger"
 )
 
@@ -20,19 +21,18 @@ const (
 	SaltLength    = 64
 )
 
-var (
-	PrefixPath = parent.PrefixPath + "/register"
-)
+var ()
 
-type Input struct {
-	ClientID               string
-	ClientSecret           string
-	GrantClientCredentials map[string]bool
-	Description            string
+type postInput struct {
+	ClientID                     string          `json:"client_id"`
+	ClientSecret                 string          `json:"client_secret"`
+	GrantClientCredentialsString string          `json:"client_credentials_scope"`
+	GrantClientCredentials       map[string]bool `json:"-"`
+	Description                  string          `json:"description"`
 }
 
 func Handler(httpResp http.ResponseWriter, req *http.Request) {
-	reqLogger, respLogger, errLogger, _ := logger.NewLoggers(PrefixPath)
+	reqLogger, respLogger, errLogger, transLogger := logger.NewLoggers(req.URL.Path)
 	resp := common.NewResponseWriter(httpResp, respLogger)
 
 	err := reqLogger.WriteLog(req)
@@ -43,23 +43,15 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 	}
 
 	// Basic request validation
-	if req.Method != http.MethodPost {
+	switch req.Method {
+	case http.MethodPost:
+		postHandler(resp, req, respLogger, errLogger, transLogger)
+	default:
 		resp.WriteResults(common.ErrorStatusMethodNotAllowed)
-		return
 	}
-	err = req.ParseForm()
-	if err != nil {
-		errLogger.WriteLog(err)
-		resp.WriteResults(common.ErrorStatusInternalServerError)
-		return
-	}
-	for _, value := range req.PostForm {
-		if len(value) > 1 {
-			resp.WriteResults(common.ErrorDuplicateParameters)
-			return
-		}
-	}
+}
 
+func postHandler(resp *common.ResponseWriter, req *http.Request, respLogger *logger.ResponseLogger, errLogger *logger.ErrorLogger, transLogger *logger.TransactionLogger) {
 	// Validate Token
 	token, err := bearer.ReadToken(req)
 	if err != nil {
@@ -83,37 +75,44 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 	}
 
 	// Validate input
-	input := &Input{
-		ClientID:               req.PostFormValue("client_id"),
-		ClientSecret:           req.PostFormValue("client_secret"),
-		GrantClientCredentials: common.StringToSet(req.PostFormValue("client_credentials_scope")),
-		Description:            req.PostFormValue("description"),
+	raw, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		resp.WriteResults(&common.ErrorStatusInternalServerError)
+		return
 	}
+
+	input := &postInput{}
+	err = json.Unmarshal(raw, input)
+	if err != nil {
+		resp.WriteResults(&common.ErrorStatusInternalServerError)
+		return
+	}
+	input.GrantClientCredentials = common.StringToSet(input.GrantClientCredentialsString)
 
 	valErr := common.ValidateErrorResponse{}
 
-	if len(input.ClientID) < parent.ClientIDLenMin || len(input.ClientID) > parent.ClientIDLenMax {
-		valErr.Add(parent.ErrorClientIDLengthInvalid)
+	if len(input.ClientID) < ClientIDLenMin || len(input.ClientID) > ClientIDLenMax {
+		valErr.Add(ErrorClientIDLengthInvalid)
 	} else if !govalidator.IsAlphanumeric(input.ClientID) {
-		valErr.Add(parent.ErrorClientIDInvalid)
+		valErr.Add(ErrorClientIDInvalid)
 	} else if c, _ := clientdb.ReadClient(input.ClientID); c != nil {
-		valErr.Add(parent.ErrorClientIDDuplicate)
+		valErr.Add(ErrorClientIDDuplicate)
 	}
 
-	if len(input.ClientSecret) < parent.ClientSecretLenMin || len(input.ClientSecret) > parent.ClientSecretLenMax {
-		valErr.Add(parent.ErrorClientSecretLengthInvalid)
+	if len(input.ClientSecret) < ClientSecretLenMin || len(input.ClientSecret) > ClientSecretLenMax {
+		valErr.Add(ErrorClientSecretLengthInvalid)
 	} else if !govalidator.IsPrintableASCII(input.ClientSecret) {
-		valErr.Add(parent.ErrorClientSecretInvalid)
+		valErr.Add(ErrorClientSecretInvalid)
 	}
 
 	if input.GrantClientCredentials == nil {
-		valErr.Add(parent.ErrorCliCreScopeMissing)
+		valErr.Add(ErrorCliCreScopeMissing)
 	} else if !clientdb.ValidateScope(input.GrantClientCredentials) {
-		valErr.Add(parent.ErrorCliCreScopeInvalid)
+		valErr.Add(ErrorCliCreScopeInvalid)
 	}
 
-	if len(input.Description) > parent.DescriptionLenMax {
-		valErr.Add(parent.ErrorDescriptionLengthInvalid)
+	if len(input.Description) > DescriptionLenMax {
+		valErr.Add(ErrorDescriptionLengthInvalid)
 	}
 
 	if len(valErr.ErrorDescriptions) > 0 {
@@ -146,7 +145,7 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = resp.WriteResults(parent.NewClientResult(newCli))
+	err = resp.WriteResults(NewClientResult(newCli))
 	if err != nil {
 		errLogger.WriteLog(err)
 	}

@@ -1,4 +1,4 @@
-package changepassword
+package password
 
 import (
 	"net/http"

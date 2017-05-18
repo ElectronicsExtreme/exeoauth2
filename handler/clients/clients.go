@@ -1,4 +1,4 @@
-package client
+package clients
 
 import (
 	"fmt"
@@ -9,8 +9,6 @@ import (
 )
 
 const (
-	PrefixPath = "/client"
-
 	ClientIDLenMin     = 3
 	ClientIDLenMax     = 20
 	ClientSecretLenMin = 6

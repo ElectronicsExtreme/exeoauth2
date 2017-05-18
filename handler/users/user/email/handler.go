@@ -1,16 +1,19 @@
-package changeemail
+package email
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"time"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/gorilla/mux"
 
 	"exeoauth2/common"
 	"exeoauth2/common/bearer"
 	"exeoauth2/database/access-token"
 	userdb "exeoauth2/database/user"
-	parent "exeoauth2/handler/user"
+	parent "exeoauth2/handler/users"
 	"exeoauth2/logger"
 )
 
@@ -18,19 +21,16 @@ const (
 	RequiredScope = "admin"
 )
 
-var (
-	PrefixPath = parent.PrefixPath + "/change_email"
-)
+var ()
 
 type Input struct {
-	Username string
-	Password string
-	Email    string
-	Forced   string
+	Password string `json:"password"`
+	Email    string `json:"email"`
+	Forced   bool   `json:"forced"`
 }
 
 func Handler(httpResp http.ResponseWriter, req *http.Request) {
-	reqLogger, respLogger, errLogger, _ := logger.NewLoggers(PrefixPath)
+	reqLogger, respLogger, errLogger, _ := logger.NewLoggers(req.URL.Path)
 	resp := common.NewResponseWriter(httpResp, respLogger)
 
 	err := reqLogger.WriteLog(req)
@@ -41,7 +41,7 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 	}
 
 	// Basic request validation
-	if req.Method != http.MethodPost {
+	if req.Method != http.MethodPut {
 		resp.WriteResults(common.ErrorStatusMethodNotAllowed)
 		return
 	}
@@ -81,22 +81,29 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 	}
 
 	// Validate input
-	input := &Input{
-		Username: req.PostFormValue("username"),
-		Password: req.PostFormValue("password"),
-		Email:    req.PostFormValue("email"),
-		Forced:   req.PostFormValue("forced"),
+	raw, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		resp.WriteResults(&common.ErrorStatusInternalServerError)
+		return
 	}
+	input := &Input{}
+	err = json.Unmarshal(raw, input)
+	if err != nil {
+		resp.WriteResults(&common.ErrorStatusInternalServerError)
+		return
+	}
+	vars := mux.Vars(req)
+	username := vars["username"]
 
 	valErr := common.ValidateErrorResponse{}
 
 	var user *userdb.UserInfo
 
-	if input.Username == "" {
+	if username == "" {
 		valErr.Add(parent.ErrorUsernameMissing)
-	} else if !govalidator.IsAlphanumeric(input.Username) {
+	} else if !govalidator.IsAlphanumeric(username) {
 		valErr.Add(parent.ErrorUsernameInvalid)
-	} else if user, err = userdb.ReadUser(input.Username); user == nil {
+	} else if user, err = userdb.ReadUser(username); user == nil {
 		if err != nil {
 			errLogger.WriteLog(err)
 			resp.WriteResults(common.ErrorStatusInternalServerError)
@@ -115,7 +122,7 @@ func Handler(httpResp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if input.Forced != "true" {
+	if !input.Forced {
 		if !user.VerifyPassword(input.Password) {
 			resp.WriteResults(ErrorPasswordIncorrect)
 			return
